@@ -7,12 +7,14 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { ulid } from 'ulid';
 import { DataSource,Repository } from 'typeorm';
 import { NotFoundError } from 'rxjs';
+import { AuthService } from 'src/auth/auth.service';
 
 @Injectable()
 export class UsersService {
     constructor(private emailService: EmailService,
         @InjectRepository(UserEntity) private usersRepository: Repository<UserEntity>,
-        private dataSource: DataSource,){}
+        private dataSource: DataSource,
+        private authService: AuthService){}
 
     async createUser(name: string, email: string, password: string) {
         const userExist = await this.checkUserExists(email);
@@ -21,6 +23,7 @@ export class UsersService {
         }
         const signupVerifyToken = uuid.v1();
         await this.saveUserUsingTransaction(name, email, password, signupVerifyToken);
+        await this.sendMemberJoinEmail(email, signupVerifyToken);
     }
 
     private async checkUserExists(emailAddress: string): Promise<boolean> {
@@ -29,7 +32,7 @@ export class UsersService {
         return user !== null;
     }
 
-    private async saveUser(name: string, email: string, password: string, signupVerifyToken: string) {
+    async saveUser(name: string, email: string, password: string, signupVerifyToken: string) {
         const user = new UserEntity();
         user.id = ulid();
         user.name = name;
@@ -39,7 +42,7 @@ export class UsersService {
         await this.usersRepository.save(user);
       }
 
-      private async saveUserUsingQueryRunner(name: string, email: string, password: string, signupVerifyToken: string) {
+    async saveUserUsingQueryRunner(name: string, email: string, password: string, signupVerifyToken: string) {
         const queryRunner = this.dataSource.createQueryRunner();
     
         await queryRunner.connect();
@@ -67,7 +70,7 @@ export class UsersService {
         }
       }
 
-      private async saveUserUsingTransaction(name: string, email: string, password: string, signupVerifyToken: string) {
+    private async saveUserUsingTransaction(name: string, email: string, password: string, signupVerifyToken: string) {
         await this.dataSource.transaction(async manager => {
           const user = new UserEntity();
           user.id = ulid();
@@ -82,20 +85,56 @@ export class UsersService {
         })
       }
     
-    private async sendMemberJoinEmail(email: string, signupVerifyToken: string){
+    async sendMemberJoinEmail(email: string, signupVerifyToken: string) {
         await this.emailService.sendMemberJoinVerification(email, signupVerifyToken);
-    }
+      }
+    
 
     async verifyEmail(signupVerifyToken:string): Promise<string>{
-        throw new Error('Method not implemented');
+        const user = await this.usersRepository.findOne({
+          where: { signupVerifyToken }
+        });
+    
+        if (!user) {
+          throw new NotFoundException('유저가 존재하지 않습니다');
+        }
+    
+        return this.authService.login({
+          id: user.id,
+          name: user.name,
+          email: user.email,
+        });
     }
 
-    async login(email: string, pasword:string): Promise<string>{
-        throw new Error('Method not implemented');
+    async login(email: string, password:string): Promise<string>{
+      const user = await this.usersRepository.findOne({
+        where: { email, password }
+      });
+  
+      if (!user) {
+        throw new NotFoundException('유저가 존재하지 않습니다');
+      }
+  
+      return this.authService.login({
+        id: user.id,
+        name: user.name,
+        email: user.email,
+      });
     }
 
-    async getUserInfo(userId:string): Promise<UserInfo>{
-        throw new Error('Method not implemented');
-    }
+    async getUserInfo(userId: string): Promise<UserInfo> {
+      const user = await this.usersRepository.findOne({
+        where: { id: userId }
+      });
+  
+      if (!user) {
+        throw new NotFoundException('유저가 존재하지 않습니다');
+      }
+  
+      return {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+      };
+  }
 }
-
