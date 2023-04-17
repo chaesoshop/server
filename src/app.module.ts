@@ -6,6 +6,11 @@ import { validationSchema } from './config/validationSchema';
 import { UsersModule } from './users/users.module';
 import { UserEntity } from './users/entity/user.entity';
 import authConfig from './config/authConfig';
+import * as winston from 'winston';
+import {
+  utilities as nestWinstonModuleUtilities,
+  WinstonModule,
+} from 'nest-winston';
 
 
 @Module({
@@ -23,7 +28,7 @@ import authConfig from './config/authConfig';
        port: 3306,
        username: process.env.DATABASE_USERNAME, 
        password: process.env.DATABASE_PASSWORD, 
-       database : "chaesoDB",
+       database : "ChaesoShopDB",
        entities: [UserEntity],           ///__dirname + '/**/*.entity{.ts,.js}'
        synchronize: process.env.DATABASE_SYNCHRONIZE === 'true',
        migrations: [__dirname + '/**/migrations/*.js'],

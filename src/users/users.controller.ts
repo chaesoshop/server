@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Query, UseGuards, Inject,LoggerService,Logger,InternalServerErrorException } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UsersService } from './users.service';
 import { UserLoginDto } from './dto/user-login.dto';
@@ -8,17 +8,21 @@ import { EmailService } from 'src/email/email.service';
 import { AuthService } from 'src/auth/auth.service';
 import { Headers } from '@nestjs/common';
 import { AuthGuard } from 'src/auth.guard';
+import { Logger as WinstonLogger } from 'winston';
+import { WINSTON_MODULE_NEST_PROVIDER, WINSTON_MODULE_PROVIDER } from 'nest-winston';
 
 @Controller('users')
 export class UsersController{
     constructor(
       private usersService: UsersService,
-      private authService: AuthService) { }
+      private authService: AuthService,
+      ) { }
 
     @Post()
     async createUser(@Body() dto: CreateUserDto): Promise<void> {
       const { name, email, password } = dto;
       await this.usersService.createUser(name, email, password);
+      return;
     }
 
     @Post('/email-verify')
@@ -34,6 +38,7 @@ export class UsersController{
   
       return await this.usersService.login(email, password);
     }
+
 
     @UseGuards(AuthGuard)
     @Get(':id')

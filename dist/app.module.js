@@ -33,7 +33,7 @@ AppModule = __decorate([
                 port: 3306,
                 username: process.env.DATABASE_USERNAME,
                 password: process.env.DATABASE_PASSWORD,
-                database: "chaesoDB",
+                database: "ChaesoShopDB",
                 entities: [user_entity_1.UserEntity],
                 synchronize: process.env.DATABASE_SYNCHRONIZE === 'true',
                 migrations: [__dirname + '/**/migrations/*.js'],

@@ -1,7 +1,12 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
-
+import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
+import * as winston from 'winston';
+import {
+  utilities as nestWinstonModuleUtilities,
+  WinstonModule,
+} from 'nest-winston';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -10,5 +15,4 @@ async function bootstrap() {
   }));
   await app.listen(3000);
 }
-
 bootstrap();
